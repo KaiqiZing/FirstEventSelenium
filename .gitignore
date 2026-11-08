@@ -1,0 +1,32 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+.UIEvents/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# ---- IDE / OS ----
+.idea/
+.vscode/
+.DS_Store
+
+# ---- CodeBuddy workspace data ----
+.codebuddy/
+
+# ---- Test run artifacts ----
+# log/ 目录仅保留 *.py 源码，忽略运行日志
+log/logs/
+# 失败截图
+logs/
+# 浏览器下载产物
+downloads/
+# Allure 报告
+allure-results/
+allure-report/

@@ -1,0 +1,6 @@
+selenium>=4.20
+pytest>=8.0
+allure-pytest>=2.13
+PyYAML>=6.0
+requests>=2.31
+webdriver-manager>=4.0
