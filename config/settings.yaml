@@ -1,0 +1,28 @@
+env:
+  active: dev
+  dev:
+    base_url: "http://localhost:5173"
+    api_base_url: "http://127.0.0.1:5050"
+    timeout: 15
+  prod:
+    base_url: "http://localhost:5173"
+    api_base_url: "http://127.0.0.1:5050"
+    timeout: 15
+browser:
+  # 浏览器类型：chrome / edge / firefox / chromium / safari
+  #   - chrome/edge/firefox：webdriver-manager 自动适配驱动
+  #   - chromium：通用 Chromium 内核（360 安全/极速、QQ、奇安信等），建议配合 binary_path/driver_path
+  #   - safari：仅 macOS（需先执行 safaridriver --enable）
+  #   - pytest 命令行 --browser 可覆盖本配置；360/qq 等别名会自动归一为 chromium
+  type: chrome
+  binary_path: ""         # [chromium 系] 浏览器可执行文件绝对路径，如 360 安装目录下 360se.exe / 360Chrome.exe
+  driver_path: ""         # 显式指定 WebDriver 可执行文件（360 等需匹配其内核版本的 chromedriver；留空则由 webdriver-manager 自动适配）
+  headless: false
+  implicit_wait: 0
+  page_load_timeout: 30
+  window_size: [1920, 1080]
+  maximize_window: true
+  download_dir: "downloads"
+screenshot:
+  on_failure: true
+  path: "logs/screenshots"
