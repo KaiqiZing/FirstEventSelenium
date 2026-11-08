@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FirstEventSelenium · 技术架构 / 数据流向 / 面试要点</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --panel:#ffffff; --line:#e3e9f2; --txt:#1f2d3d; --txt2:#5a6b82; --txt3:#8a99b0;
+    --accent:#2563eb; --accent-bg:#eff4ff; --green:#0f9d6e; --orange:#d97b1a; --red:#d84545;
+    --code-bg:#f2f5f9; --mono:"SF Mono",Menlo,Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--txt);line-height:1.75;font-size:15px}
+  a{color:var(--accent);text-decoration:none}
+  code{font-family:var(--mono);background:var(--code-bg);padding:1px 6px;border-radius:4px;font-size:13px;color:#c0341d}
+  pre{background:#1e2735;color:#dbe4f0;border-radius:10px;padding:16px 20px;overflow-x:auto;
+      font-family:var(--mono);font-size:12.5px;line-height:1.65;margin:14px 0}
+  pre .c{color:#7d8da6}
+
+  .layout{display:flex;max-width:1280px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:flex-start;width:240px;min-height:100vh;padding:28px 18px;
+      border-right:1px solid var(--line);background:var(--panel);flex-shrink:0}
+  nav h2{font-size:13px;color:var(--txt3);letter-spacing:1px;margin:18px 0 8px}
+  nav h2:first-child{margin-top:0}
+  nav a{display:block;color:var(--txt2);font-size:13.5px;padding:5px 10px;border-radius:6px;line-height:1.5}
+  nav a:hover{background:var(--accent-bg);color:var(--accent)}
+  main{flex:1;padding:36px 44px 80px;min-width:0}
+
+  header.hero{background:linear-gradient(135deg,#1e3a8a,#2563eb 55%,#0ea5e9);color:#fff;
+      border-radius:14px;padding:34px 38px;margin-bottom:34px}
+  header.hero h1{font-size:26px;margin-bottom:10px}
+  header.hero p{opacity:.92;font-size:14px;max-width:900px}
+  .badges{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .badges span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);
+      border-radius:999px;padding:3px 12px;font-size:12.5px}
+
+  section{margin-bottom:48px}
+  h2.sec{font-size:21px;padding-left:12px;border-left:4px solid var(--accent);margin-bottom:18px}
+  h3{font-size:17px;margin:26px 0 10px;color:#173a6b}
+  h4{font-size:15px;margin:18px 0 8px}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0 8px 22px}
+  li{margin:4px 0}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--panel);
+      border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(30,50,90,.08);font-size:13.5px}
+  th{background:#eef3fa;text-align:left;padding:9px 12px;color:#24405f;white-space:nowrap}
+  td{padding:8px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tr:hover td{background:#f8faff}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+      padding:20px 24px;margin:14px 0;box-shadow:0 1px 3px rgba(30,50,90,.06)}
+  .card h4{margin-top:0;color:#173a6b}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}nav{display:none}main{padding:24px}}
+
+  .layer-flow{display:flex;flex-direction:column;gap:0;margin:16px 0}
+  .layer{display:flex;align-items:stretch;gap:14px}
+  .layer .tag{width:150px;flex-shrink:0;text-align:right;font-family:var(--mono);font-size:12.5px;
+      padding:10px 0;color:var(--txt2)}
+  .layer .box{flex:1;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);
+      border-radius:8px;padding:10px 16px;font-size:13.5px}
+  .layer .box b{color:#173a6b}
+  .arrow{text-align:left;padding:2px 0 2px 164px;color:var(--txt3);font-size:12px}
+
+  .flow{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:14px 0}
+  .step{display:flex;gap:12px;align-items:flex-start;padding:7px 0}
+  .step .no{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;margin-top:2px}
+  .step .bd{font-size:14px}
+  .step .bd small{display:block;color:var(--txt2);font-size:12.5px}
+  .step.alt .no{background:var(--green)}
+  .step.warn .no{background:var(--orange)}
+  .step.err .no{background:var(--red)}
+
+  .qa{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:var(--panel);overflow:hidden}
+  .qa summary{cursor:pointer;padding:12px 18px;font-weight:600;font-size:14.5px;list-style:none;
+      display:flex;gap:10px;align-items:baseline}
+  .qa summary::-webkit-details-marker{display:none}
+  .qa summary::before{content:"▸";color:var(--accent);transition:transform .15s}
+  .qa[open] summary::before{transform:rotate(90deg)}
+  .qa summary:hover{background:var(--accent-bg)}
+  .qa .ans{padding:0 18px 14px 34px;font-size:14px;color:var(--txt)}
+  .qa .qid{color:var(--txt3);font-family:var(--mono);font-size:12px;font-weight:400}
+
+  .pill{display:inline-block;border-radius:4px;padding:0 7px;font-size:12px;font-weight:600;margin-right:6px}
+  .pill.b{background:#e3ecff;color:#2456c4}.pill.g{background:#ddf3ea;color:#0b7a55}
+  .pill.o{background:#fdeeda;color:#b0630f}.pill.r{background:#fbe3e3;color:#c23333}
+  .callout{border-left:4px solid var(--orange);background:#fffaf2;border-radius:0 8px 8px 0;
+      padding:10px 16px;margin:12px 0;font-size:13.5px}
+  .callout.blue{border-color:var(--accent);background:var(--accent-bg)}
+  footer{color:var(--txt3);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <h2>第一部分</h2>
+  <a href="#stack">1.1 技术栈</a>
+  <a href="#overview">1.2 分层总览</a>
+  <a href="#layers">1.3 各层职责与设计目的</a>
+  <a href="#principles">1.4 架构设计三主线</a>
+  <h2>第二部分</h2>
+  <a href="#flow-main">2.1 用例完整生命周期</a>
+  <a href="#flow-i18">2.2 I-18 页面↔数据库核对</a>
+  <a href="#flow-e01">2.3 E-01 加密多源断言</a>
+  <a href="#flow-fail">2.4 失败取证流</a>
+  <h2>第三部分</h2>
+  <a href="#qa-arch">3.1 架构设计类</a>
+  <a href="#qa-selenium">3.2 Selenium 高频技术点</a>
+  <a href="#qa-data">3.3 数据与断言类</a>
+  <a href="#qa-eng">3.4 工程化类</a>
+  <a href="#pitfalls">3.5 实战踩坑清单</a>
+  <a href="#redline">3.6 红线与职业判断</a>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>FirstEventSelenium 技术架构 · 数据流向 · 面试要点</h1>
+  <p>基于当前代码库最新状态整理（37 个场景用例 / 6 大分组）。被测系统：<b>FirstSeleniumUIEvent</b>（Vue 3 + Element Plus 前端 <code style="background:rgba(255,255,255,.2);color:#fff">:5173</code>，Flask 后端 <code style="background:rgba(255,255,255,.2);color:#fff">127.0.0.1:5050</code>，结算与密文数据真实落盘 SQLite）。工程性质：独立、自包含的 Selenium UI 自动化工程，与被测系统、参考工程物理隔离，不修改被测代码。</p>
+  <div class="badges">
+    <span>Python 3.11+</span><span>Selenium 4.20+</span><span>pytest 8</span><span>Allure</span>
+    <span>37 用例 · 6 分组</span><span>5 浏览器矩阵</span><span>CDP 网络取证</span><span>SQLite 一致性核对</span>
+  </div>
+</header>
+
+<!-- ================= 第一部分 ================= -->
+<section id="stack">
+<h2 class="sec">第一部分：技术架构</h2>
+<h3>1.1 技术栈</h3>
+<table>
+  <tr><th>类别</th><th>选型</th><th>说明</th></tr>
+  <tr><td>语言</td><td>Python 3.11+（3.13 验证）</td><td>大量类型标注与 <code>from __future__ import annotations</code></td></tr>
+  <tr><td>自动化内核</td><td>Selenium ≥ 4.20</td><td>WebDriver + CDP（Chromium 网络层取证）</td></tr>
+  <tr><td>测试框架</td><td>pytest ≥ 8.0</td><td>fixture / hook / marker（smoke、regression）</td></tr>
+  <tr><td>报告</td><td>allure-pytest ≥ 2.13</td><td>经 <code>allure_compat</code> 兼容层接入，可整体降级</td></tr>
+  <tr><td>配置</td><td>PyYAML + INI（configparser）</td><td>运行配置与元素定位双配置源</td></tr>
+  <tr><td>接口辅助</td><td>requests</td><td>直连后端 API，绕过页面做数据准备与兜底断言</td></tr>
+  <tr><td>驱动管理</td><td>webdriver-manager</td><td>Chrome/Edge/Firefox 驱动自动适配</td></tr>
+</table>
+</section>
+
+<section id="overview">
+<h3>1.2 分层总览</h3>
+<div class="layer-flow">
+  <div class="layer"><div class="tag">run_tests.py</div><div class="box"><b>入口层</b>：多模式运行（all / smoke / regression / allure），组装 pytest 命令</div></div>
+  <div class="arrow">▼</div>
+  <div class="layer"><div class="tag">case/</div><div class="box"><b>用例层</b>：pytest 用例 + driver fixture + 会话级预检 + 失败取证 hook</div></div>
+  <div class="arrow">▼</div>
+  <div class="layer"><div class="tag">business/</div><div class="box"><b>业务层</b>：场景业务组合（<code>biz_step</code> 打标 + allure 步骤），异常流打标层</div></div>
+  <div class="arrow">▼</div>
+  <div class="layer"><div class="tag">handle/</div><div class="box"><b>操作层</b>：场景元素级操作流 + 跨场景平台动作（iframe / Shadow DOM / 窗口 / 弹窗 / 拖拽）</div></div>
+  <div class="arrow">▼</div>
+  <div class="layer"><div class="tag">base/ + common/</div><div class="box"><b>定位层 + 基础层</b>：场景码→INI→(By,value) 定位解析；显式等待封装 + 统一异常体系</div></div>
+</div>
+<p>横切支撑：<code>util/</code>（驱动工厂 / API / SQLite / 金额 / 摘要 / 网络取证 / 截图 / allure 兼容）、<code>config/</code>（YAML + 6 个 INI）、<code>log/</code>（按天滚动日志）。</p>
+<div class="callout blue">依赖方向严格单向：<code>case → business → handle → base + common</code>，下层永不反向依赖上层，任何一层可独立替换。</div>
+</section>
+
+<section id="layers">
+<h3>1.3 各层职责与设计目的</h3>
+
+<div class="card"><h4>① 配置层 <code>config/</code> —— 双配置源分离</h4>
+<table>
+  <tr><th>文件</th><th>作用</th><th>设计目的</th></tr>
+  <tr><td><code>settings.yaml</code></td><td>环境地址、超时、浏览器参数、下载目录、截图开关</td><td>运行参数集中一处；<code>env.active</code> 切换环境</td></tr>
+  <tr><td><code>settings.py</code></td><td><code>Config</code> 单例配置中心，点路径读取</td><td>全局只加载一次；缺键返回 default；格式错误抛 <code>ConfigError</code> 带配置键/文件证据</td></tr>
+  <tr><td><code>*Element.ini</code> ×6</td><td>37 场景元素定位，<code>key=by&gt;value</code></td><td><b>定位与代码物理分离</b>：前端改样式只动 INI；by 缺省 xpath 降低书写成本</td></tr>
+</table></div>
+
+<div class="card"><h4>② 定位层 <code>base/find_element.py</code> —— 场景码注册器</h4>
+<ul>
+  <li>场景码前缀（I/W/M/C/X/E）→ 分组 INI 映射表 <code>GROUP_INI</code>，Section 名即场景码本身。</li>
+  <li>解析 <code>by&gt;value</code> 为 Selenium <code>(By, value)</code> 元组，支持 8 种定位方式。</li>
+  <li><b>双级缓存</b>：INI 句柄缓存 + 定位器解析缓存，反复定位不重复读盘解析。</li>
+  <li>与 WebDriver 完全解耦，可独立单测。</li>
+</ul></div>
+
+<div class="card"><h4>③ 基础层 <code>common/</code> —— 等待体系 + 异常体系</h4>
+<p><b>webdriver_wait_common</b>：所有元素操作唯一入口。显式等待三档（visible / presence / clickable），超时读取配置；<code>click_params</code> 原生点击失败自动 JS 兜底；等待超时<b>当场截图</b>并包装为 <code>ElementNotFoundError</code>（带定位器+截图路径）——取证发生在离现场最近的时刻。</p>
+<p><b>exceptions</b>：<code>FrameworkError</code> 基类定义 <code>evidence()</code> 协议，子类只供证据、<code>__str__</code> 自动拼装；<code>format_exception_chain()</code> 展开异常链，<b>硬性约定异常链恒为 2 层</b>（技术根因→领域异常）；<code>find_in_chain()</code> 沿链捞取证据属性。</p></div>
+
+<div class="card"><h4>④ 操作层 <code>handle/</code> —— 场景操作流</h4>
+<ul>
+  <li><code>base_scenario_handle.py</code>：基类传入场景码，<code>loc(key)</code> 一行完成「INI 读取→定位解析」，收敛 click/fill/js_fill/结果区断言。<code>js_fill</code> 用原生 value setter + 派发 input/change 事件，<b>解决 Vue v-model 受控组件 send_keys 不同步</b>。</li>
+  <li><code>action_support.py</code>：跨场景平台动作库（窗口句柄、嵌套 iframe、Shadow DOM 穿透、原生 alert、hover/拖拽、上传、富文本、滚动容器）。</li>
+  <li><code>*_handles.py</code> ×6：每个场景一个 Handle 类，只描述「怎么操作这个页面」，不含流程编排。</li>
+</ul></div>
+
+<div class="card"><h4>⑤ 业务层 <code>business/</code> —— 业务组合 + 异常打标</h4>
+<ul>
+  <li><code>*_business.py</code> ×6：Handle 原子操作按业务步骤组合，每步包 <code>biz_step(...)</code>（等价 allure step）。</li>
+  <li><code>business_context.py</code>：<b>异常流打标层</b>。从调用栈自动推断场景码（<code>run_e01_xxx → E01</code>），三分类处理：<code>FrameworkError</code> 裸重抛不套链；<code>AssertionError</code> 包装为 <code>BusinessError</code> 并 <code>raise from</code> 挂「场景码+步骤+入参」；其余异常原样透传。</li>
+  <li>复杂场景用 <code>NamedTuple</code> 返回结构化结果（如 <code>I18RecapResult</code>），「取数」与「断言」分离。</li>
+</ul></div>
+
+<div class="card"><h4>⑥ 用例层 <code>case/</code> —— 用例 + fixture + 收敛取证</h4>
+<ul>
+  <li><code>test_*.py</code> ×6（37 用例）：<code>open_scenario(driver, "/i/01")</code> 直达路由，断言统一落在页面底部「操作结果」日志区。</li>
+  <li><code>service_preflight</code>（session 级）：探活前端 + <code>GET /api/health</code>，<b>快速失败</b>；端口 5173/5174 自动探测回退。</li>
+  <li><code>driver</code> fixture：<code>--browser</code> 覆盖配置，创建/回收驱动。</li>
+  <li><code>pytest_runtest_makereport</code> hook：<b>失败收敛层</b>——不看异常类型不做分支，统一收拢 ①异常链全文 ②元素级截图（沿链捞取）③用例级现场截图进 allure；取证失败只降级 warning，<b>绝不掩盖原始失败</b>。</li>
+</ul></div>
+
+<div class="card"><h4>⑦ 工具层 <code>util/</code> —— 横切能力</h4>
+<table>
+  <tr><th>模块</th><th>作用</th><th>设计目的</th></tr>
+  <tr><td><code>driver_factory</code></td><td>五浏览器统一创建</td><td>工厂+别名归一（360/QQ→chromium）；<code>binary_path</code> 支持国产浏览器；沙箱参数仅 Linux；performance 日志为 CDP 前置</td></tr>
+  <tr><td><code>scenario_support</code></td><td>路由直达 / 结果区轮询断言 / 预检 / 端口回退</td><td>「操作结果区」是全局统一断言点：失败码 HTTP 仍 200、ElMessage 自动消失，只有日志区稳定可读</td></tr>
+  <tr><td><code>api_client</code></td><td>requests.Session 直连后端</td><td>造数 / 数据准备 / 兜底断言，绕过页面缩短链路</td></tr>
+  <tr><td><code>sqlite_source</code></td><td>被测 SQLite <b>只读</b>直读</td><td>I-18/E-03 库侧证据源；表白名单+参数化查询杜绝注入；库路径由接口动态返回不写死</td></tr>
+  <tr><td><code>amount_util</code></td><td>金额文本→Decimal，容差比较，分→元</td><td>金融断言纪律：禁止 float 直接相等；一分钱容差</td></tr>
+  <tr><td><code>digest_util</code></td><td>SHA-256 摘要独立复算</td><td>E-01 断言从「明文相等」改「摘要相等」，不依赖浏览器 Web Crypto</td></tr>
+  <tr><td><code>network_recorder</code></td><td>CDP Network 域抓真实请求/响应体</td><td>页面报文区是前端自证不可信；仅 Chromium，其余浏览器自动降级不失败</td></tr>
+  <tr><td><code>screenshot_util</code></td><td>截图命名与路径</td><td>文件名清洗非法字符，时间戳防覆盖</td></tr>
+  <tr><td><code>allure_compat</code></td><td>allure 兼容层</td><td>未安装 allure 时降级为日志/无操作，用例永不受报告组件影响</td></tr>
+  <tr><td><code>read_ini</code></td><td>INI 解析</td><td>相对路径归一 + 缺 Section/key 明确报错</td></tr>
+</table></div>
+
+<div class="card"><h4>⑧ 日志层 + ⑨ 入口层</h4>
+<p><b>log/user_log.py</b>：全局单例 Logger，控制台 + <code>TimedRotatingFileHandler</code> 按天滚动（保留 30 天），配合 <code>pytest.ini log_cli</code> 实时可见。</p>
+<p><b>run_tests.py</b>：all / smoke / regression / allure 四模式。<b>根 conftest.py</b> 仅注册 <code>--browser</code> 选项——pytest 解析期根 conftest 必先加载而子目录 conftest 未必，选项注册必须放根目录（典型坑的解法）。</p></div>
+</section>
+
+<section id="principles">
+<h3>1.4 架构设计的三条主线</h3>
+<div class="grid2">
+  <div class="card"><h4>1. 配置与代码分离</h4><p>元素定位（INI）、运行参数（YAML）全部外置，代码零硬编码定位串。</p></div>
+  <div class="card"><h4>2. 断言源可信分级</h4><p>页面可见内容 ≠ 可信断言源。稳定断言点依次为：「操作结果」日志区 → 服务端 API → SQLite 库 → CDP 网络层，页面 DOM 仅作辅助。</p></div>
+  <div class="card"><h4>3. 可降级设计</h4><p>allure、CDP 取证、performance 日志、JS 点击——增强能力失效时一律降级而非失败，保证任何浏览器/环境下核心断言依然成立。</p></div>
+</div>
+</section>
+
+<!-- ================= 第二部分 ================= -->
+<section id="flow-main">
+<h2 class="sec">第二部分：数据流向（按业务流程）</h2>
+<h3>2.1 主流程：一次用例的完整生命周期</h3>
+<div class="flow">
+  <div class="step"><div class="no">1</div><div class="bd"><b>入口</b>：run_tests.py --mode all 组装 pytest 命令（mode → marker / alluredir）<small>根 conftest 注册 --browser 选项</small></div></div>
+  <div class="step"><div class="no">2</div><div class="bd"><b>[session] service_preflight</b>：读 settings.yaml → 探测 5173/5174 回退 → GET 前端首页 + /api/health<small>不可达则 RuntimeError 快速失败并给出启动指引</small></div></div>
+  <div class="step"><div class="no">3</div><div class="bd"><b>[function] driver fixture</b>：--browser 覆盖配置 → 别名归一 → 按浏览器分支创建（driver_path 优先，webdriver-manager 兜底）<small>注入下载目录 prefs / performance 日志 → driver.get(base_url)</small></div></div>
+  <div class="step"><div class="no">4</div><div class="bd"><b>用例执行</b>：open_scenario(driver, "/i/01") 直达路由 + 等页面标题</div></div>
+  <div class="step"><div class="no">5</div><div class="bd"><b>business.run_xxx</b>：biz_step("步骤名", **上下文) → allure step + 调用栈推断场景码</div></div>
+  <div class="step"><div class="no">6</div><div class="bd"><b>handle 场景操作</b>：loc(key) → FindElement（场景码→INI→by&gt;value，双缓存）→ WebDriverWaitCommon 显式等待 → click/fill/js_fill<small>平台动作走 action_support（iframe/窗口/Shadow DOM/弹窗）</small></div></div>
+  <div class="step"><div class="no">7</div><div class="bd"><b>断言（按可信级别三选一）</b>：a. assert_result_contains 轮询结果区关键字（主断言）；b. ApiClient 直连后端比对；c. SqliteSource 只读直读库 + amount_util 清洗比对（I-18/E-03）</div></div>
+  <div class="step alt"><div class="no">✓</div><div class="bd"><b>通过</b> → driver.quit()</div></div>
+  <div class="step err"><div class="no">✗</div><div class="bd"><b>失败</b> → pytest_runtest_makereport 收敛层：异常链全文 + 链上元素截图 + 用例现场截图 → allure</div></div>
+  <div class="step"><div class="no">8</div><div class="bd"><b>报告</b>：allure 模式下调 allure CLI 渲染 HTML 报告</div></div>
+</div>
+<pre>case(pytest) → business(业务组合+biz_step打标) → handle(场景操作)
+   → base FindElement(INI解析+缓存) + common WebDriverWaitCommon(显式等待)
+   → 页面「操作结果」区 / ApiClient / SqliteSource 三级断言
+   → 失败: hook收敛层(异常链+元素截图+现场截图) → allure</pre>
+</section>
+
+<section id="flow-i18">
+<h3>2.2 业务流程一：I-18 页面数字 ↔ 数据库一致性核对</h3>
+<div class="flow">
+  <div class="step"><div class="no">1</div><div class="bd"><b>复位</b>：POST /api/dbconsistency/reset 重建落库（用例开头+结尾各一次，可反复执行）</div></div>
+  <div class="step"><div class="no">2</div><div class="bd"><b>静态全量核对</b>：页面侧翻页收集全量明细（每页 5 条×N 页）→ parse_amount 清洗；库侧 /api/dbconsistency/db/meta 拿库路径 → SqliteSource 只读直读<small>cents_to_yuan 统一单位（分→元）后逐条容差比对；覆盖 NULL「—」/ 括号负数 / 汇总漂移</small></div></div>
+  <div class="step"><div class="no">3</div><div class="bd"><b>动态挑样本</b>：按「角色」从库筛选（勾稽一致的结算单 / NULL 行 / 负数行），不写死任何编号金额<small>条数/页数与 COUNT(*) 互推并校验 ceil(总数/页大小)==页数</small></div></div>
+  <div class="step"><div class="no">4</div><div class="bd"><b>业务闭环</b>：页面调整明细金额 ±delta → wait_db_equals 轮询等写库（约 0.6s 延迟）→ 断言明细落库且页面一致，汇总字段<b>不回写</b>（页面汇总不变）</div></div>
+  <div class="step"><div class="no">5</div><div class="bd"><b>重算汇总</b>：汇总字段按明细求和回写 → 页面「结算单汇总金额合计」变化</div></div>
+  <div class="step alt"><div class="no">✓</div><div class="bd"><b>收口断言</b>：页面汇总 == Σ settle_bill.total_amount_cents（库）且 变化量 == 调整增量 delta</div></div>
+</div>
+</section>
+
+<section id="flow-e01">
+<h3>2.3 业务流程二：E-01 传输加密的多源断言</h3>
+<div class="flow">
+  <div class="step"><div class="no">1</div><div class="bd"><b>等异步公钥</b>：公钥 0.3~0.8s 异步签发，等「密钥已就绪」文案（指纹先于状态标签更新，不能等错锚点）</div></div>
+  <div class="step"><div class="no">2</div><div class="bd"><b>NetworkRecorder.start()</b>：CDP Network 域开启（仅 Chromium；失败自动降级）</div></div>
+  <div class="step"><div class="no">3</div><div class="bd"><b>提交加密表单</b>：RSA-OAEP 随机填充 → 每次密文不同 → <b>禁止密文相等断言</b></div></div>
+  <div class="step"><div class="no">4</div><div class="bd"><b>三方摘要互校</b>（SHA-256 前 16 位大写）：① 页面 #local-digest（Web Crypto）② 服务端 serverDigest ③ 脚本 hashlib 独立复算</div></div>
+  <div class="step"><div class="no">5</div><div class="bd"><b>网络层取证（增强项）</b>：抓真实请求/响应体，证明报文无明文、响应无 revealedPassword<small>非 Chromium 跳过，接口层兜底，不影响通过</small></div></div>
+  <div class="step"><div class="no">6</div><div class="bd"><b>明文通道对照</b>：提交明文 → 服务端拒绝 → 断言摘要区被清空（不残留上一轮结果）</div></div>
+</div>
+</section>
+
+<section id="flow-fail">
+<h3>2.4 失败取证流（异常链视角）</h3>
+<div class="flow">
+  <div class="step err"><div class="no">1</div><div class="bd"><b>技术根因</b>：WebDriverWaitCommon 等待超时 → 当场截图 → raise ElementNotFoundError(定位器, 截图路径)</div></div>
+  <div class="step warn"><div class="no">2</div><div class="bd"><b>领域异常</b>：business biz_step 捕获 AssertionError → raise BusinessError([场景码] 步骤未达成, 上下文) from exc<small>异常链恒为 2 层，FrameworkError 裸重抛不套链</small></div></div>
+  <div class="step"><div class="no">3</div><div class="bd"><b>收敛层</b>：pytest hook 不看类型不做分支 → 异常链全文 + 链上截图 + 现场截图 → allure</div></div>
+  <div class="step alt"><div class="no">✓</div><div class="bd"><b>报告归档</b>：一条链讲清「哪个场景哪一步、哪个元素、当时页面长什么样」</div></div>
+</div>
+</section>
+
+<!-- ================= 第三部分 ================= -->
+<section id="qa-arch">
+<h2 class="sec">第三部分：面试要点与实战问题</h2>
+<h3>3.1 架构设计类（必问）</h3>
+
+<details class="qa"><summary>Q1：框架分几层？为什么这么分？</summary><div class="ans">
+六层+横切：<code>case → business → handle → base(定位) + common(等待)</code>，util/config/log 横切。核心动机是<b>变化隔离</b>：前端改样式只动 INI，业务改流程只动 business，Selenium API 变化只动 common/handle，用例层只关心「打开哪个场景、断言什么关键字」。单向依赖保证任何一层可独立替换（如 network_recorder 从 CDP 换 BiDi，用例零改动）。</div></details>
+
+<details class="qa"><summary>Q2：元素定位怎么管理？为什么用 INI 而不是 PO 类属性/JSON/YAML？</summary><div class="ans">
+场景码注册器：场景码（I01）→ 分组 INI 同名 Section → <code>key=by&gt;value</code> 解析为 (By, value)，双级缓存。选 INI 因为：一 key 一行可读性最好、无嵌套、configparser 标准库零依赖、与参考工程语义一致便于团队迁移。本质是把 PageObject 的「定位器仓库」从代码挪到配置，改动免改代码。</div></details>
+
+<details class="qa"><summary>Q3：PO 模式在你这里怎么体现？</summary><div class="ans">
+三层拆分：<code>handle</code> = 经典 PageObject（元素级操作），<code>business</code> = 业务流程对象（步骤编排+打标），<code>case</code> = 纯断言。比单层 PO 多出的 business 层解决「多用例复用同一段业务流程」的重复代码问题，也是 allure 步骤报告与异常打标的挂载点。</div></details>
+
+<details class="qa"><summary>Q4：等待机制怎么设计？隐式等待为什么设为 0？</summary><div class="ans">
+全部显式等待（WebDriverWait + EC 三档）。<code>implicit_wait: 0</code> 因为隐式与显式混用会造成等待时间不可预期叠加（Selenium 官方反模式）。非元素类条件（日志关键字、导出完成、写库就绪）用轮询封装（wait_result_contains / wait_db_equals），杜绝固定 sleep。</div></details>
+
+<details class="qa"><summary>Q5：失败怎么定位？</summary><div class="ans">
+三级取证：① 元素级——等待超时当场截图挂进 ElementNotFoundError；② 业务级——biz_step 把 AssertionError 包装为带场景码/步骤/入参的 BusinessError 并 raise from 挂链；③ 用例级——pytest hook 统一收敛异常链+链上截图+现场截图进 allure。约定<b>异常链恒为 2 层</b>，防止层层翻译埋掉根因。</div></details>
+</section>
+
+<section id="qa-selenium">
+<h3>3.2 Selenium 高频技术点</h3>
+
+<details class="qa"><summary>Q6：StaleElementReferenceException 怎么处理？<span class="qid">I-03</span></summary><div class="ans">
+根因：SPA 整表重建后旧元素引用失效。解法：不缓存元素对象，每次操作重新定位；确实持有元素的，捕获后重新定位重试。框架层面「<b>定位器缓存、元素不缓存</b>」是关键设计。</div></details>
+
+<details class="qa"><summary>Q7：元素不可交互/点击被拦截怎么破？<span class="qid">I-01/I-02</span></summary><div class="ans">
+先等 element_to_be_clickable 而非仅 presence；遮罩场景等遮罩消失后再操作；scrollIntoView 滚到可视区；最后手段 JS 点击兜底（click_params 内置自动降级）。JS 点击绕过真实用户事件，兜底而非首选。</div></details>
+
+<details class="qa"><summary>Q8：iframe / Shadow DOM 怎么处理？<span class="qid">I-04/I-05</span></summary><div class="ans">
+iframe：switch_to.frame 逐层穿透，完事 switch_to.default_content() 回主文档（双层必须逐层进逐层出）。Shadow DOM：Selenium 4 的 element.shadow_root 取 ShadowRoot 再 find_element，CSS 选择器无法穿透 shadow boundary。</div></details>
+
+<details class="qa"><summary>Q9：Vue/React 受控输入框 send_keys 不生效？<span class="qid">I-16/C-01</span></summary><div class="ans">
+根因：框架监听 input/change 事件同步状态，clear+send_keys 在受控组件上可能残留旧值或不触发绑定。解法 js_fill：用原生 value setter 写值再手动 dispatchEvent(new Event('input',{bubbles:true}))。</div></details>
+
+<details class="qa"><summary>Q10：多窗口怎么切换？<span class="qid">M-01~M-04</span></summary><div class="ans">
+操作前记录 window_handles 快照，等句柄数增加后切新句柄，完事切回。OAuth 小窗等「自动回传并关闭」：轮询句柄数回落再断言主窗口。非用户手势 window.open 会被拦截（M-04），保留默认弹窗策略复现并断言计数。</div></details>
+
+<details class="qa"><summary>Q11：文件下载/上传怎么验证？<span class="qid">I-10/W-03</span></summary><div class="ans">
+下载：Chromium 用 prefs download.default_directory、Firefox 用 browser.download.dir + neverAsk.saveToDisk 静默落指定目录，断言产物存在。上传：直接对 &lt;input type=file&gt; send_keys(绝对路径)，绕过系统文件选择器。</div></details>
+
+<details class="qa"><summary>Q12：原生 alert 与日期控件？<span class="qid">I-11/C-01</span></summary><div class="ans">
+driver.switch_to.alert 的 accept/dismiss/send_keys。原生 date/datetime-local 控件不走逐字 send_keys（各浏览器差异大），统一 js_fill 写 value + 派发事件。</div></details>
+</section>
+
+<section id="qa-data">
+<h3>3.3 数据与断言类（本项目特色）</h3>
+
+<details class="qa"><summary>Q13：金额断言为什么不能用 float？</summary><div class="ans">
+浮点求和有尾差。本项目纪律：页面文本先 parse_amount 清洗（剥 ¥/千分位/括号负数/文案前缀）成 Decimal，一分钱容差比较（tolerance=0.005）；库侧单位是「分」，先 cents_to_yuan 统一单位。NULL（未清算）与 0 元语义不同，None 全程保留不参与求和。</div></details>
+
+<details class="qa"><summary>Q14：页面数字和数据库核对怎么做才不脆弱？<span class="qid">I-18</span></summary><div class="ans">
+两原则：① <b>不写死任何期望值</b>——条数/页数/期望金额全部从库动态推导（ceil 互推校验），样本按「角色」挑选；② <b>业务闭环驱动</b>——「调整金额→重算汇总→页面变化量==调整增量 且 页面==库求和」，模拟真实业务链路。写库约 0.6s 延迟，必须轮询等待而非立即读。</div></details>
+
+<details class="qa"><summary>Q15：加密场景为什么不能断言密文？<span class="qid">E-01~E-04</span></summary><div class="ans">
+OAEP/AES-GCM 都有随机填充/随机 IV，同一明文每次密文不同——密文相等断言必败。正确姿势：断言语义等价物——服务端解密结果的 SHA-256 摘要（脚本独立复算三方互校）；「同明文两次密文不同」反证随机性。页面 DOM 是前端自证不可信，真实报文用 CDP 抓网络栈取证。解密成功 ≠ 验签通过（E-04 时间戳过期 2001 与签名篡改 2002 分开断言）。</div></details>
+
+<details class="qa"><summary>Q16：断言点为什么统一在「操作结果」日志区？</summary><div class="ans">
+业务失败码 HTTP 仍 200，requests 层无感；失败提示走 ElMessage 会自动消失，时机不可控。只有底部日志区累积、稳定、可轮询。推广：<b>UI 断言要选「稳定、累积、语义化」的锚点</b>，不用 toast 这类瞬态元素。</div></details>
+</section>
+
+<section id="qa-eng">
+<h3>3.4 工程化类</h3>
+
+<details class="qa"><summary>Q17：多浏览器怎么支持？</summary><div class="ans">
+工厂+策略分支：create_driver 按类型分发五个创建函数；360/QQ 等国产浏览器别名归一 chromium，ChromeDriver + binary_path 指可执行文件（驱动主版本需匹配其内核，建议显式 driver_path）；Safari 仅 macOS 需 safaridriver --enable；沙箱参数仅 Linux 注入。--browser 覆盖 YAML，同一套用例形成浏览器执行矩阵。</div></details>
+
+<details class="qa"><summary>Q18：能力降级怎么做？举三例。</summary><div class="ans">
+① allure 未安装 → allure_compat 降级为日志，用例照常跑；② CDP 仅 Chromium → Firefox/Safari 下 NetworkRecorder.start() 返回 False，跳过网络层断言改接口层兜底；③ performance 日志缓冲有副作用 → UIEVENT_DISABLE_PERF_LOG=1 一键关闭。原则：<b>增强能力永远不作为唯一断言源</b>。</div></details>
+
+<details class="qa"><summary>Q19：稳定性治理还做了什么？</summary><div class="ans">
+会话级预检快速失败（避免 37 用例挨个超时）；端口 5173/5174 自动探测回退；W-05 不稳定接口重试到成功；截图命名清洗+时间戳；日志按天滚动 30 天；取证代码自身 try 兜底不掩盖原始失败。</div></details>
+
+<details class="qa"><summary>Q20：框架怎么迁移到别的项目？</summary><div class="ans">
+换 settings.yaml + 重写 6 个 INI + 按场景写 handle/business/case，框架层零改动。换技术栈（Playwright/BiDi）只需替换 webdriver_wait_common 与 network_recorder 的后端实现。</div></details>
+</section>
+
+<section id="pitfalls">
+<h3>3.5 实际项目中踩过的坑（问题清单）</h3>
+<table>
+  <tr><th>#</th><th>问题现象</th><th>根因</th><th>本项目解法</th></tr>
+  <tr><td>1</td><td>元素定位到但点不动</td><td>遮罩未消失/折叠未展开/disabled</td><td>等 clickable + 等遮罩消失 + 前置就绪，JS 点击仅兜底</td></tr>
+  <tr><td>2</td><td>脚本时好时坏</td><td>StaleElement：SPA 重建 DOM 后用旧引用</td><td>定位器缓存、元素不缓存，操作前重新定位</td></tr>
+  <tr><td>3</td><td>Vue 输入框值没进去/旧值残留</td><td>受控组件需 input 事件同步 v-model</td><td>js_fill：原生 setter + dispatchEvent</td></tr>
+  <tr><td>4</td><td>金额断言偶发差 0.01</td><td>float 尾差 + 千分位/括号负数未清洗</td><td>Decimal + 一分钱容差 + 单位统一（分→元）</td></tr>
+  <tr><td>5</td><td>保存后立刻读库读不到</td><td>写库异步（约 0.6s）</td><td>wait_db_equals 轮询，杜绝固定 sleep</td></tr>
+  <tr><td>6</td><td>断言 ElMessage 时灵时不灵</td><td>toast 自动消失，时机不可控</td><td>断言点改到底部累积日志区</td></tr>
+  <tr><td>7</td><td>密文断言永远失败</td><td>OAEP/GCM 随机填充，密文每次不同</td><td>改断言 SHA-256 摘要；密文不同反证随机性</td></tr>
+  <tr><td>8</td><td>页面显示「已加密」但报文是明文</td><td>页面 DOM 是前端自证</td><td>CDP Network 域抓真实请求/响应体取证</td></tr>
+  <tr><td>9</td><td>换 Firefox 用例全挂</td><td>CDP 仅 Chromium</td><td>能力探测 + 自动降级 + 接口层兜底</td></tr>
+  <tr><td>10</td><td>分页数据对不上</td><td>每页只渲染 5 条，漏收后续页</td><td>翻页收集全量 + ceil(总数/页大小)==页数 互校验</td></tr>
+  <tr><td>11</td><td>汇总和明细对不上</td><td>业务库汇总字段是独立列，天然漂移</td><td>两类数据源分别取分别比；重算后收口比对</td></tr>
+  <tr><td>12</td><td>公钥就绪了但提交仍失败</td><td>指纹先于状态标签更新，等错锚点</td><td>等「密钥已就绪」文案而非 DOM 收敛</td></tr>
+  <tr><td>13</td><td>37 个用例跑完才发现服务没起</td><td>无前置检查</td><td>session 级预检 /api/health 快速失败</td></tr>
+  <tr><td>14</td><td>换个机器端口不对全挂</td><td>Vite 端口被占顺延 5174</td><td>预检自动探测 5173/5174 并告警切换</td></tr>
+  <tr><td>15</td><td>--browser 参数不生效</td><td>选项注册在子目录 conftest，解析期未加载</td><td>注册放根 conftest，使用留在 fixture</td></tr>
+  <tr><td>16</td><td>下载验证依赖系统弹窗</td><td>浏览器下载弹窗无法自动化操作</td><td>prefs 静默下载到项目目录，断言文件存在</td></tr>
+  <tr><td>17</td><td>报告组件缺失导致用例失败</td><td>allure 强依赖</td><td>兼容层降级：报告只是增强，不是链路</td></tr>
+  <tr><td>18</td><td>X-04 用例稳定失败</td><td><b>被测系统后端缺陷</b>（POST /api/seed/new 500，旧进程未重启）</td><td>自动化侧如实报告不规避；定位为被测方问题并给出复现证据</td></tr>
+</table>
+</section>
+
+<section id="redline">
+<h3>3.6 红线与职业判断（加分项）</h3>
+<div class="callout"><b>不绕过被测系统安全机制</b>：验证码用后端万能码不接 OCR；webdriver 特征检测只断言不注入反检测参数；弹窗拦截保留默认策略复现。自动化是验证手段，不是对抗手段。</div>
+<div class="callout"><b>缺陷归属判断</b>：X-04 稳定失败时，通过「直连后端 vs 经前端代理均 500、同模块 GET 正常」交叉取证，定位为被测后端旧进程问题而非脚本问题——用证据说话，不替被测系统兜底，也不让脚本背锅。</div>
+<div class="callout blue"><b>测试数据自洁</b>：I-18 用例开头结尾都调 reset 重建落库，可反复执行、无顺序依赖、无脏数据。</div>
+</section>
+
+<footer>文档生成依据：当前代码库实读（config / base / common / util / handle / business / case 全部模块），与代码同步。</footer>
+</main>
+</div>
+</body>
+</html>
